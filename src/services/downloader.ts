@@ -35,7 +35,7 @@ export async function downloadVideo(jobId: string, item: DownloadItem): Promise<
     progress: 0 
   });
 
-  const process = spawn({
+  const child = spawn({
     cmd: [config.ytdlpBinary, ...args],
     stdout: 'pipe',
     stderr: 'pipe',
@@ -52,7 +52,7 @@ export async function downloadVideo(jobId: string, item: DownloadItem): Promise<
   // Parse progress from stdout
   const progressRegex = /\[download\]\s+(\d+\.?\d*)%/;
   
-  process.stdout.on('data', (chunk) => {
+  child.stdout.on('data', (chunk) => {
     const text = chunk.toString();
     output += text;
     
@@ -66,7 +66,7 @@ export async function downloadVideo(jobId: string, item: DownloadItem): Promise<
     }
   });
 
-  process.stderr.on('data', (chunk) => {
+  child.stderr.on('data', (chunk) => {
     const text = chunk.toString();
     errorOutput += text;
     
@@ -88,7 +88,7 @@ export async function downloadVideo(jobId: string, item: DownloadItem): Promise<
     }
   });
 
-  const exitCode = await process.exited;
+  const exitCode = await child.exited;
 
   if (exitCode === 0) {
     // Extract filename from output
@@ -123,5 +123,5 @@ export async function downloadVideo(jobId: string, item: DownloadItem): Promise<
   }
 
   // Cleanup
-  process.kill();
+  child.kill();
 }
