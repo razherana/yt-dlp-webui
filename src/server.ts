@@ -3,6 +3,7 @@ import { mkdir, readdir, stat } from 'fs/promises';
 import { join, extname } from 'path';
 import { config, FORMATS, type FormatKey } from './config';
 import { jobManager } from './services/job-manager';
+import { createJobZip } from './services/zip';
 import { validateYouTubeUrl } from './validation/youtube-url';
 import type { ApiResponse } from './types';
 
@@ -34,6 +35,10 @@ const server = serve({
         return handleGetFormats(corsHeaders);
       }
       
+      if (path === '/api/jobs' && req.method === 'GET') {
+        return handleGetAllJobs(corsHeaders);
+      }
+      
       if (path === '/api/download' && req.method === 'POST') {
         return await handleCreateDownload(req, corsHeaders);
       }
@@ -50,7 +55,11 @@ const server = serve({
         }
         // /api/download/:jobId/files/:filename
         if (parts.length === 5 && parts[3] === 'files') {
-          return handleGetFile(parts[2], parts[4], corsHeaders);
+          return await handleGetFile(parts[2], parts[4], corsHeaders);
+        }
+        // /api/download/:jobId/zip
+        if (parts.length === 4 && parts[3] === 'zip') {
+          return handleGetJobZip(parts[2], corsHeaders);
         }
       }
       
@@ -220,11 +229,19 @@ function handleGetJobFiles(jobId: string, corsHeaders: any): Response {
   return jsonResponse({ success: true, data: files }, 200, corsHeaders);
 }
 
-function handleGetFile(jobId: string, filename: string, corsHeaders: any): Response {
+async function handleGetFile(jobId: string, encodedFilename: string, corsHeaders: any): Promise<Response> {
   const job = jobManager.getJob(jobId);
   
   if (!job) {
     return jsonResponse({ success: false, error: 'Job not found' }, 404, corsHeaders);
+  }
+  
+  // The filename arrives percent-encoded via the URL path.
+  let filename: string;
+  try {
+    filename = decodeURIComponent(encodedFilename);
+  } catch {
+    filename = encodedFilename;
   }
   
   const files = jobManager.getDownloadedFiles(jobId);
@@ -235,14 +252,40 @@ function handleGetFile(jobId: string, filename: string, corsHeaders: any): Respo
   }
   
   const fileContent = file(fileInfo.path);
-  if (!fileContent) {
-    return jsonResponse({ success: false, error: 'File not found' }, 404, corsHeaders);
+  if (!await fileContent.exists()) {
+    return jsonResponse({ success: false, error: 'File not found on disk' }, 404, corsHeaders);
   }
   
   return new Response(fileContent, {
     headers: {
       'Content-Type': 'application/octet-stream',
       'Content-Disposition': `attachment; filename="${filename}"`,
+      ...corsHeaders
+    }
+  });
+}
+
+function handleGetAllJobs(corsHeaders: any): Response {
+  const jobs = jobManager.getAllJobsWithFiles();
+  return jsonResponse({ success: true, data: jobs }, 200, corsHeaders);
+}
+
+function handleGetJobZip(jobId: string, corsHeaders: any): Response {
+  const job = jobManager.getJob(jobId);
+  if (!job) {
+    return jsonResponse({ success: false, error: 'Job not found' }, 404, corsHeaders);
+  }
+
+  const result = createJobZip(jobId);
+  if (!result) {
+    return jsonResponse({ success: false, error: 'No completed files to zip' }, 400, corsHeaders);
+  }
+
+  const zipFilename = `${job.id}.zip`;
+  return new Response(result.stream as unknown as BodyInit, {
+    headers: {
+      'Content-Type': 'application/zip',
+      'Content-Disposition': `attachment; filename="${zipFilename}"`,
       ...corsHeaders
     }
   });

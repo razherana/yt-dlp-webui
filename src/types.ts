@@ -20,6 +20,18 @@ export interface DownloadJob {
   updatedAt: number;
 }
 
+export interface JobSummary {
+  id: string;
+  status: DownloadStatus;
+  createdAt: number;
+  updatedAt: number;
+  /** Aggregate progress (0-100) across all items in the job. */
+  progress: number;
+  items: DownloadItem[];
+  /** Names of successfully downloaded files for this job. */
+  files: string[];
+}
+
 export interface ApiResponse<T = any> {
   success: boolean;
   data?: T;

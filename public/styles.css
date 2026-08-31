@@ -27,6 +27,15 @@ body {
     font-size: 0.9em;
 }
 
+#jobsList .job-card .progress {
+    height: 16px;
+    font-size: 0.85em;
+}
+
+#jobsList .job-card .border-top {
+    border-color: #eee !important;
+}
+
 #downloadItems .card {
     animation: slideIn 0.3s ease-out;
 }

@@ -53,13 +53,20 @@ export function validateYouTubeUrl(input: string): string | null {
 }
 
 export function sanitizeFilename(filename: string): string {
-  // Remove path traversal characters
+  // Strip path separators first so a bare '..' can never form a traversal
+  // segment (e.g. '../x' becomes '..x'). Consecutive dots that are part of
+  // the real filename (e.g. "Part... 1") are preserved.
   const sanitized = filename
-    .replace(/\.\./g, '')
     .replace(/[\/\\]/g, '')
     .replace(/[^\w\-\.\s]/g, '_')
     .trim()
     .slice(0, 200); // Limit length
-  
+
+  // A result of exactly '.' or '..' would point at the download directory or
+  // its parent; fall back to a safe name instead.
+  if (sanitized === '.' || sanitized === '..') {
+    return 'download';
+  }
+
   return sanitized || 'download';
 }

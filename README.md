@@ -10,7 +10,9 @@ Paste one or more YouTube URLs, pick a format, and download them — all through
 - 🎬 Multiple output formats (best quality, video-only, audio-only, MP4, WebM, MP3)
 - 📊 Live download progress per item
 - 📁 Browse and download finished files
-- 🔒 URL validation (YouTube domains + valid video IDs only)
+- 🤖 Finished jobs download automatically (single file, or a ZIP for multiple files)
+- 🗜️ Manual "Download ZIP" button per job
+- �🔒 URL validation (YouTube domains + valid video IDs only)
 - ⏱️ Concurrent download queue with configurable limits
 
 ## Requirements
@@ -72,8 +74,15 @@ Returns a `jobId` plus any invalid URLs that were rejected.
 ### `GET /api/download/:jobId`
 Returns the status and per-item progress of a job.
 
+### `GET /api/jobs`
+Returns all jobs (download history) with per-item progress and the names of
+downloaded files.
+
 ### `GET /api/download/:jobId/files`
 Lists the finished files for a job.
+
+### `GET /api/download/:jobId/zip`
+Streams a ZIP archive containing all completed files of a job.
 
 ### `GET /api/download/:jobId/files/:filename`
 Streams a finished file for download.
@@ -92,7 +101,8 @@ yt-dlp-webui/
 │   ├── types.ts       # Shared TypeScript types
 │   ├── services/
 │   │   ├── downloader.ts    # yt-dlp process orchestration
-│   │   └── job-manager.ts   # Download queue & job state
+│   │   ├── job-manager.ts   # Download queue & job state
+│   │   └── zip.ts           # Per-job ZIP archive streaming
 │   └── validation/
 │       └── youtube-url.ts   # URL validation & filename sanitizing
 ├── deploy.sh          # Deploy script (GitHub -> VPS)

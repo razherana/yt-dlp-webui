@@ -8,8 +8,11 @@
     "start": "bun run src/server.ts",
     "test": "bun test"
   },
-  "dependencies": {},
+  "dependencies": {
+    "archiver": "^8.0.0"
+  },
   "devDependencies": {
+    "@types/archiver": "^8.0.0",
     "@types/bun": "latest"
   }
 }

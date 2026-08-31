@@ -1,4 +1,4 @@
-import type { DownloadJob, DownloadItem, DownloadStatus } from '../types';
+import type { DownloadJob, DownloadItem, DownloadStatus, JobSummary } from '../types';
 import { config } from '../config';
 import { sanitizeFilename } from '../validation/youtube-url';
 
@@ -44,6 +44,30 @@ class JobManager {
 
   getAllJobs(): DownloadJob[] {
     return Array.from(this.jobs.values());
+  }
+
+  getAllJobsWithFiles(): JobSummary[] {
+    return Array.from(this.jobs.values())
+      .map(job => {
+        const progress = job.items.length === 0
+          ? 0
+          : Math.round(job.items.reduce((sum, item) => sum + (item.progress || 0), 0) / job.items.length);
+
+        const files = job.items
+          .filter(item => item.status === 'completed' && item.filename)
+          .map(item => sanitizeFilename(item.filename!));
+
+        return {
+          id: job.id,
+          status: job.status,
+          createdAt: job.createdAt,
+          updatedAt: job.updatedAt,
+          progress,
+          items: job.items,
+          files,
+        };
+      })
+      .sort((a, b) => b.createdAt - a.createdAt);
   }
 
   getDownloadedFiles(jobId: string): Array<{ filename: string; path: string }> {
