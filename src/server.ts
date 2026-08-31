@@ -11,6 +11,7 @@ await mkdir(config.downloadDir, { recursive: true });
 
 const server = serve({
   port: config.port,
+  hostname: config.hostname,
   async fetch(req) {
     const url = new URL(req.url);
     const path = url.pathname;

@@ -1,5 +1,6 @@
 export const config = {
   port: parseInt(process.env.PORT || '3000'),
+  hostname: process.env.HOST || '0.0.0.0',
   downloadDir: process.env.DOWNLOAD_DIR || './downloads',
   maxConcurrentDownloads: parseInt(process.env.MAX_CONCURRENT_DOWNLOADS || '2'),
   ytdlpBinary: process.env.YTDLP_BINARY || 'yt-dlp',
